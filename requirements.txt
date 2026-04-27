@@ -1,3 +1,5 @@
 streamlit
-groq
+openai
+duckduckgo-search
+youtube_transcript_api
 pandas
