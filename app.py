@@ -1,39 +1,71 @@
-import os
-import platform
-import sys
-from dash import Dash, html, dcc, Input, Output, State, no_update
+import streamlit as st
 from groq import Groq
+import os
+import pandas as pd
 
-# --- CONFIGURATION SÉCURISÉE ---
-# Render va lire la clé directement dans ses paramètres secrets
-API_KEY = os.environ.get("GROQ_API_KEY") 
+# --- CONFIGURATION ---
+st.set_page_config(page_title="SkyElite AI", page_icon="🚀", layout="centered")
+
+# Récupération de la clé API
+API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=API_KEY)
 
-app = Dash(__name__, title="SkyElite V4.1")
-server = app.server  # Ligne INDISPENSABLE pour Render
+# Initialisation de l'historique (style Messenger)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # --- INTERFACE ---
-app.layout = html.Div(style={'backgroundColor': '#0a0a0a', 'color': '#e0e0e0', 'padding': '15px', 'height': '100vh', 'fontFamily': 'sans-serif'}, children=[
-    html.H2("🚀 SKY ELITE ONLINE", style={'color': '#00ffcc', 'textAlign': 'center', 'marginBottom': '10px'}),
-    
-    # Zone de Chat
-    html.Div(id='chat-display', style={
-        'height': '65vh', 
-        'overflowY': 'scroll', 
-        'border': '1px solid #333', 
-        'padding': '10px', 
-        'borderRadius': '10px',
-        'backgroundColor': '#111',
-        'marginBottom': '10px',
-        'whiteSpace': 'pre-wrap'
-    }),
+st.title("💬 SkyElite Messenger")
+st.caption("Propulsé par Llama 3.3 & Streamlit Cloud")
 
-    # Zone de saisie
-    html.Div(style={'display': 'flex', 'gap': '10px'}, children=[
-        dcc.Input(
-            id='user-input',
-            type='text',
-            placeholder='Posez une question à SkyElite...',
+# Barre latérale pour les fonctionnalités bonus
+with st.sidebar:
+    st.header("⚙️ Options")
+    uploaded_file = st.file_uploader("📎 Analyser un fichier (CSV/TXT)", type=["csv", "txt"])
+    if uploaded_file is not None:
+        st.success("Fichier chargé avec succès !")
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+            st.write("Aperçu des données :", df.head())
+    
+    if st.button("🧹 Effacer la discussion"):
+        st.session_state.messages = []
+        st.rerun()
+
+# Affichage des messages de l'historique
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Zone de saisie (Chat Input style Messenger)
+if prompt := st.chat_input("Écrivez votre message ici..."):
+    # 1. Afficher le message utilisateur
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # 2. Réponse de l'IA SkyElite
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        
+        try:
+            # On envoie tout l'historique pour que l'IA se souvienne du contexte
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=False
+            )
+            full_response = completion.choices[0].message.content
+            message_placeholder.markdown(full_response)
+        except Exception as e:
+            full_response = f"❌ Erreur : {str(e)}"
+            st.error(full_response)
+            
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
             style={'flex': '4', 'padding': '15px', 'borderRadius': '8px', 'border': 'none', 'backgroundColor': '#222', 'color': 'white'}
         ),
         html.Button('ENVOYER', id='send-btn', n_clicks=0, style={
