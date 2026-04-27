@@ -1,79 +1,116 @@
 import streamlit as st
-from groq import Groq
+from openai import OpenAI
 import os
-import platform
-import sys
+from duckduckgo_search import DDGS
+from youtube_transcript_api import YouTubeTranscriptApi
+import re
 
-# --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="SKY ELITE v4.1", page_icon="🛡️", layout="wide")
+# --- CONFIGURATION AGENT ---
+st.set_page_config(page_title="SKY ELITE AGENT", page_icon="🛡️", layout="wide")
 
-# Initialisation Groq
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# Client OpenRouter (Utilise la variable d'environnement sur Render)
+client = OpenAI(
+  base_url="https://openrouter.ai",
+  api_key=os.environ.get("OPENROUTER_API_KEY"),
+)
 
-# --- IDENTITÉ ET CAPACITÉS (System Prompt) ---
-SYSTEM_PROMPT = """Tu es SKY ELITE v4.1, un bot multi-tâche PRO. 
-Tes capacités incluent :
-- 📊 Analyse système (OS, RAM, CPU)
-- 💻 exécution de code Python/Shell sécurisé
-- 🌐 Scan réseau et APIs
-- 🔍 Recherche web et scraping
-- 🛡️ Gestion de fichiers et dossiers
-Réponds toujours de manière professionnelle, précise et propose du code si nécessaire."""
+# --- FONCTIONS OUTILS (TOOLS) ---
 
-# --- LOGIQUE DE L'HISTORIQUE ---
+def chercher_web(query):
+    """Recherche temps réel sur le Web et Blogs"""
+    try:
+        with DDGS() as ddgs:
+            results = [r for r in ddgs.text(query, max_results=5)]
+            return "\n".join([f"Source: {r['title']}\nContenu: {r['body']}" for r in results])
+    except:
+        return "Erreur lors de la recherche web."
+
+def extraire_id_youtube(url):
+    """Extrait l'ID d'une vidéo YouTube depuis son URL"""
+    regex = r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+    match = re.search(regex, url)
+    return match.group(1) if match else None
+
+def lire_youtube(url):
+    """Récupère la transcription d'une vidéo YouTube"""
+    video_id = extraire_id_youtube(url)
+    if not video_id: return "URL YouTube invalide."
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['fr', 'en'])
+        return " ".join([t['text'] for t in transcript])[:8000] # Limite pour le contexte
+    except:
+        return "Transcription indisponible pour cette vidéo."
+
+# --- INTERFACE ---
+st.title("🛡️ SKY ELITE v4.2 AGENT")
+st.caption("Intelligence Autonome | Web Search | YouTube Analysis")
+
 if "messages" not in st.session_state:
-    # On commence avec le prompt système (caché pour l'utilisateur)
-    st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    st.session_state.messages = []
 
-# --- INTERFACE (SIDEBAR) ---
+# Sidebar pour les outils
 with st.sidebar:
-    st.title("🛠️ PANNEAU DE CONTRÔLE")
-    st.info(f"**OS**: {platform.system()} {platform.release()}\n\n**Python**: {sys.version.split()[0]}")
-    
-    st.divider()
-    uploaded_file = st.file_uploader("📎 JOINDRE UN FICHIER (Analyse)", type=['csv', 'txt', 'pdf', 'py'])
-    
-    if st.button("🧹 NETTOYER L'HISTORIQUE"):
-        st.session_state.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    st.header("⚙️ Paramètres Agent")
+    st.info("Modèle : Gemini 2.0 Flash (Free)")
+    if st.button("🧹 Clear Memory"):
+        st.session_state.messages = []
         st.rerun()
 
-# --- AFFICHAGE DU CHAT ---
-st.title("🚀 SKY ELITE v4.1")
-st.caption("Interface Web Professionnelle - Mode Cloud Actif")
-
-# On affiche les messages (en sautant le premier qui est le système)
+# Affichage du chat
 for m in st.session_state.messages:
-    if m["role"] != "system":
-        with st.chat_message(m["role"]):
-            st.markdown(m["content"])
+    with st.chat_message(m["role"]):
+        st.markdown(m["content"])
 
-# --- ZONE DE SAISIE ---
-if prompt := st.chat_input("Entrez une commande ou une question..."):
-    # Ajout du message utilisateur
+# Saisie Agent
+if prompt := st.chat_input("Donnez un objectif à l'Agent..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Réponse de SKY ELITE
     with st.chat_message("assistant"):
-        try:
-            # Préparation du contexte avec fichier si présent
-            file_info = f"\n[INFO: L'utilisateur a joint le fichier : {uploaded_file.name}]" if uploaded_file else ""
+        full_context = ""
+        
+        # LOGIQUE AGENTIQUE : Détecter si on a besoin du Web ou de YouTube
+        with st.status("🛠️ Analyse de la requête...", expanded=True) as status:
             
-            # Appel API
+            # Cas YouTube
+            if "youtube.com" in prompt or "youtu.be" in prompt:
+                status.write("📺 Détection d'un lien YouTube...")
+                video_text = lire_youtube(prompt)
+                full_context = f"CONTENU VIDÉO YOUTUBE :\n{video_text}\n\n"
+                status.write("✅ Transcription récupérée.")
+            
+            # Cas Recherche Web
+            else:
+                status.write("🔍 Activation de la recherche Web...")
+                web_results = chercher_web(prompt)
+                full_context = f"RÉSULTATS WEB TEMPS RÉEL :\n{web_results}\n\n"
+                status.write("✅ Données web collectées.")
+
+            status.update(label="🤖 Synthèse et Analyse critique...", state="complete")
+
+        # Appel OpenRouter avec le contexte enrichi
+        try:
+            response_placeholder = st.empty()
+            full_response = ""
+            
             completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=st.session_state.messages, # Envoie tout l'historique + prompt système
-                temperature=0.3
+                model="google/gemini-2.0-flash-001:free",
+                messages=[
+                    {"role": "system", "content": "Tu es SKY ELITE v4.2. Analyse les données fournies et réponds avec précision."},
+                    {"role": "user", "content": f"{full_context}Question de l'utilisateur : {prompt}"}
+                ],
+                stream=True
             )
             
-            response = completion.choices[0].message.content
-            st.markdown(response)
-            st.session_state.messages.append({"role": "assistant", "content": response})
+            for chunk in completion:
+                if chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    response_placeholder.markdown(full_response + "▌")
+            
+            response_placeholder.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
             
         except Exception as e:
-            st.error(f"❌ Erreur de connexion au noyau SkyElite : {e}")
-
-# --- PIED DE PAGE ---
-st.markdown("---")
-st.markdown("<p style='text-align: center; color: grey;'>SKY ELITE v4.1 PRO - Sécurisé par Chiffrement Cloud</p>", unsafe_allow_html=True)
+            st.error(f"Erreur Agent : {str(e)}")
+ 
