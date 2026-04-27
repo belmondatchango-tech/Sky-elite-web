@@ -1,39 +1,45 @@
 import streamlit as st
 from groq import Groq
 import os
-import pandas as pd
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="SkyElite AI", page_icon="🚀", layout="centered")
+# 1. Configuration de la page
+st.set_page_config(page_title="SkyElite AI", page_icon="🚀")
 
-# Récupération de la clé API
+# 2. Récupération de la clé API
 API_KEY = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=API_KEY)
 
-# Initialisation de l'historique (style Messenger)
+# 3. Initialisation de l'historique
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- INTERFACE ---
+# 4. Interface
 st.title("💬 SkyElite Messenger")
-st.caption("Propulsé par Llama 3.3 & Streamlit Cloud")
 
-# Barre latérale pour les fonctionnalités bonus
-with st.sidebar:
-    st.header("⚙️ Options")
-    uploaded_file = st.file_uploader("📎 Analyser un fichier (CSV/TXT)", type=["csv", "txt"])
-    if uploaded_file is not None:
-        st.success("Fichier chargé avec succès !")
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
-            st.write("Aperçu des données :", df.head())
-    
-    if st.button("🧹 Effacer la discussion"):
-        st.session_state.messages = []
-        st.rerun()
-
-# Affichage des messages de l'historique
+# Affichage des messages
 for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# Zone de saisie
+if prompt := st.chat_input("Écrivez votre message..."):
+    # Afficher le message utilisateur
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # Réponse de l'IA
+    with st.chat_message("assistant"):
+        try:
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+            )
+            response = completion.choices[0].message.content
+            st.markdown(response)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+        except Exception as e:
+            st.error(f"Erreur : {e}")
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
