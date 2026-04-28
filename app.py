@@ -1,7 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import os
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from youtube_transcript_api import YouTubeTranscriptApi
 import re
 
