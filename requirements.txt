@@ -1,5 +1,5 @@
-streamlit
+ddgs
 openai
-duckduckgo-search
-youtube_transcript_api
+streamlit
+youtube-transcript-api
 pandas
