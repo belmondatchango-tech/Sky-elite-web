@@ -65,12 +65,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- MODÈLES DISPONIBLES ---
+# openrouter/free = routeur automatique : choisit le meilleur modèle gratuit dispo
 MODELS = [
-    "google/gemini-2.0-flash-exp:free",
-    "google/gemini-flash-1.5:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
+    "openrouter/free",
+    "meta-llama/llama-3.3-70b-instruct:free",
     "deepseek/deepseek-r1:free",
+    "deepseek/deepseek-v3:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "google/gemma-3-27b-it:free",
 ]
 
 # --- CLIENT OPENROUTER ---
@@ -208,7 +210,7 @@ def decider_outils(prompt: str, has_file: bool = False) -> dict:
         }
     try:
         response = client.chat.completions.create(
-            model="google/gemini-2.0-flash-exp:free",
+            model="openrouter/free",
             messages=[
                 {"role": "system", "content": SYSTEM_ROUTER},
                 {"role": "user", "content": prompt}
