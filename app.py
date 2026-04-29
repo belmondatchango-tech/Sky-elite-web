@@ -6,6 +6,8 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import re
 import json
 import logging
+import base64
+import io
 
 # --- LOGGING ---
 logging.basicConfig(level=logging.INFO)
@@ -62,6 +64,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# --- MODÈLES DISPONIBLES ---
+MODELS = [
+    "google/gemini-2.0-flash-exp:free",
+    "google/gemini-flash-1.5:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "mistralai/mistral-7b-instruct:free",
+    "deepseek/deepseek-r1:free",
+]
+
 # --- CLIENT OPENROUTER ---
 @st.cache_resource
 def get_client():
@@ -114,6 +125,58 @@ def lire_youtube(url: str) -> dict:
         return {"success": False, "data": f"Transcription indisponible: {str(e)}"}
 
 
+def lire_fichier(uploaded_file) -> dict:
+    """
+    Lit et extrait le contenu d'un fichier uploadé.
+    Supporte : TXT, MD, CSV, JSON, PDF (texte), PNG, JPG, JPEG, WEBP
+    Retourne {"success": bool, "data": str, "type": str, "b64": str|None}
+    """
+    name = uploaded_file.name
+    ext = name.split(".")[-1].lower()
+    raw_bytes = uploaded_file.read()
+
+    # --- Fichiers texte ---
+    if ext in ["txt", "md", "csv", "json", "py", "html", "xml"]:
+        try:
+            text = raw_bytes.decode("utf-8", errors="ignore")
+            preview = text[:15000]
+            return {"success": True, "data": preview, "type": "text", "b64": None, "name": name}
+        except Exception as e:
+            return {"success": False, "data": f"Erreur lecture texte: {e}", "type": "text", "b64": None, "name": name}
+
+    # --- PDF ---
+    elif ext == "pdf":
+        try:
+            import pdfplumber
+            with pdfplumber.open(io.BytesIO(raw_bytes)) as pdf:
+                pages_text = []
+                for page in pdf.pages[:20]:  # max 20 pages
+                    t = page.extract_text()
+                    if t:
+                        pages_text.append(t)
+            full_text = "\n\n".join(pages_text)[:15000]
+            if not full_text.strip():
+                return {"success": False, "data": "PDF sans texte extractible (PDF scanné?).", "type": "pdf", "b64": None, "name": name}
+            return {"success": True, "data": full_text, "type": "pdf", "b64": None, "name": name}
+        except ImportError:
+            return {"success": False, "data": "Module pdfplumber manquant. Ajoutez-le à requirements.txt.", "type": "pdf", "b64": None, "name": name}
+        except Exception as e:
+            return {"success": False, "data": f"Erreur lecture PDF: {e}", "type": "pdf", "b64": None, "name": name}
+
+    # --- Images ---
+    elif ext in ["png", "jpg", "jpeg", "webp", "gif"]:
+        try:
+            b64 = base64.b64encode(raw_bytes).decode("utf-8")
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif"}
+            mime = mime_map.get(ext, "image/png")
+            return {"success": True, "data": f"Image : {name}", "type": "image", "b64": b64, "mime": mime, "name": name}
+        except Exception as e:
+            return {"success": False, "data": f"Erreur lecture image: {e}", "type": "image", "b64": None, "name": name}
+
+    else:
+        return {"success": False, "data": f"Format non supporté : .{ext}", "type": "unknown", "b64": None, "name": name}
+
+
 # --- DÉCISION AGENTIQUE ---
 
 SYSTEM_ROUTER = """Tu es un routeur d'outils intelligent. 
@@ -122,7 +185,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown ni explication.
 
 Format de réponse :
 {
-  "tools": ["web_search", "youtube"],  // liste vide si aucun outil nécessaire
+  "tools": ["web_search", "youtube"],
   "web_query": "requête optimisée pour la recherche web si pertinent",
   "youtube_url": "URL YouTube extraite si présente",
   "reasoning": "explication courte en français"
@@ -131,14 +194,21 @@ Format de réponse :
 Outils disponibles :
 - "web_search" : pour les questions factuelles, actualités, recherches générales
 - "youtube" : si l'utilisateur fournit un lien YouTube
-- [] (aucun) : si c'est une conversation simple, un calcul, une rédaction sans besoin de données externes
+- [] (aucun) : si c'est une conversation simple, un calcul, une rédaction, ou si un fichier est fourni
 """
 
-def decider_outils(prompt: str) -> dict:
+def decider_outils(prompt: str, has_file: bool = False) -> dict:
     """Appelle le LLM pour décider quels outils utiliser."""
+    if has_file:
+        return {
+            "tools": [],
+            "web_query": None,
+            "youtube_url": None,
+            "reasoning": "Fichier détecté — analyse directe sans outil externe."
+        }
     try:
         response = client.chat.completions.create(
-            model="google/gemini-2.0-flash-001:free",
+            model="google/gemini-2.0-flash-exp:free",
             messages=[
                 {"role": "system", "content": SYSTEM_ROUTER},
                 {"role": "user", "content": prompt}
@@ -151,7 +221,6 @@ def decider_outils(prompt: str) -> dict:
         return json.loads(raw)
     except Exception as e:
         logger.error(f"Erreur routeur: {e}")
-        # Fallback : détection basique
         has_yt = "youtube.com" in prompt or "youtu.be" in prompt
         return {
             "tools": ["youtube"] if has_yt else ["web_search"],
@@ -163,10 +232,9 @@ def decider_outils(prompt: str) -> dict:
 
 # --- GESTION MÉMOIRE ---
 
-MAX_HISTORY_TURNS = 10  # Limite : 10 échanges max dans le contexte
+MAX_HISTORY_TURNS = 10
 
 def get_trimmed_history(messages: list) -> list:
-    """Retourne les N derniers messages pour éviter le dépassement de contexte."""
     if len(messages) > MAX_HISTORY_TURNS * 2:
         return messages[-(MAX_HISTORY_TURNS * 2):]
     return messages
@@ -179,6 +247,7 @@ SYSTEM_MAIN = """Tu es SKY ELITE v5.0, un agent IA expert et autonome.
 Règles :
 - Analyse les données fournies avec précision et esprit critique
 - Cite tes sources quand tu utilises des résultats web
+- Si un fichier est fourni, analyse-le en profondeur et réponds aux questions de l'utilisateur à son sujet
 - Réponds en français par défaut sauf si l'utilisateur écrit dans une autre langue
 - Sois concis, structuré, et utile
 - Si les données ne répondent pas à la question, dis-le clairement
@@ -188,17 +257,27 @@ Règles :
 # --- INTERFACE ---
 
 st.markdown('<div class="main-title">🛡️ SKY ELITE v5.0</div>', unsafe_allow_html=True)
-st.caption("Agent IA Autonome · Recherche Web · Analyse YouTube · Mémoire contextuelle")
+st.caption("Agent IA Autonome · Recherche Web · Analyse YouTube · Analyse de Fichiers · Mémoire contextuelle")
 
 # --- SIDEBAR ---
 with st.sidebar:
     st.header("⚙️ Agent Settings")
 
-    model_choice = st.selectbox(
-        "Modèle LLM",
-        ["google/gemini-2.0-flash-001:free", "meta-llama/llama-3.1-8b-instruct:free", "mistralai/mistral-7b-instruct:free"],
-        index=0
+    model_choice = st.selectbox("Modèle LLM", MODELS, index=0)
+
+    st.divider()
+    st.subheader("📁 Uploader un fichier")
+    uploaded_file = st.file_uploader(
+        "PDF, TXT, CSV, JSON, Image...",
+        type=["pdf", "txt", "md", "csv", "json", "py", "html", "xml", "png", "jpg", "jpeg", "webp"],
+        help="Le fichier sera analysé par l'agent."
     )
+
+    if uploaded_file:
+        st.success(f"✅ Fichier prêt : {uploaded_file.name}")
+        if st.button("🗑️ Retirer le fichier"):
+            uploaded_file = None
+            st.rerun()
 
     st.divider()
     st.subheader("📊 Session Stats")
@@ -227,7 +306,6 @@ if "sources" not in st.session_state:
 for i, m in enumerate(st.session_state.messages):
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
-        # Afficher les sources associées à ce message
         if m["role"] == "assistant" and i < len(st.session_state.sources):
             srcs = st.session_state.sources[i // 2] if (i // 2) < len(st.session_state.sources) else []
             if srcs:
@@ -249,17 +327,33 @@ if prompt := st.chat_input("Posez une question ou collez un lien YouTube..."):
     with st.chat_message("assistant"):
         full_context = ""
         session_sources = []
+        file_result = None
+        has_file = uploaded_file is not None
 
-        # ÉTAPE 1 : DÉCISION AGENTIQUE
         with st.status("🧠 Réflexion de l'agent...", expanded=True) as status:
 
-            decision = decider_outils(prompt)
+            # --- TRAITEMENT FICHIER ---
+            if has_file:
+                status.write(f"📁 Analyse du fichier : *{uploaded_file.name}*")
+                uploaded_file.seek(0)
+                file_result = lire_fichier(uploaded_file)
+                if file_result["success"]:
+                    if file_result["type"] == "image":
+                        status.write("🖼️ Image détectée — envoi au modèle vision.")
+                    else:
+                        full_context += f"=== CONTENU DU FICHIER : {file_result['name']} ===\n{file_result['data']}\n\n"
+                        status.write(f"✅ Fichier lu ({len(file_result['data'])} caractères).")
+                else:
+                    status.write(f"⚠️ {file_result['data']}")
+                    full_context += f"⚠️ Fichier : {file_result['data']}\n\n"
+
+            # --- DÉCISION OUTILS ---
+            decision = decider_outils(prompt, has_file=has_file)
             tools_used = decision.get("tools", [])
             reasoning = decision.get("reasoning", "")
-
             status.write(f"💡 Stratégie : {reasoning}")
 
-            # ÉTAPE 2 : EXÉCUTION DES OUTILS
+            # --- EXÉCUTION OUTILS ---
             if "youtube" in tools_used:
                 url = decision.get("youtube_url") or prompt
                 status.write("📺 Lecture de la vidéo YouTube...")
@@ -283,26 +377,42 @@ if prompt := st.chat_input("Posez une question ou collez un lien YouTube..."):
                     full_context += f"⚠️ Web : {result['data']}\n\n"
                     status.write(f"⚠️ {result['data']}")
 
-            if not tools_used:
+            if not tools_used and not has_file:
                 status.write("💬 Réponse directe (aucun outil nécessaire).")
 
             status.update(label="🤖 Génération de la réponse...", state="complete")
 
-        # ÉTAPE 3 : APPEL LLM PRINCIPAL
+        # --- APPEL LLM PRINCIPAL ---
         try:
             response_placeholder = st.empty()
             full_response = ""
 
-            # Construction du message utilisateur enrichi
-            user_message = prompt
-            if full_context:
-                user_message = f"{full_context}\n---\nQuestion : {prompt}"
+            # Construction du message utilisateur
+            user_message_content = []
 
-            # Historique tronqué + nouveau message
-            history = get_trimmed_history(st.session_state.messages[:-1])  # Exclure le dernier (déjà ajouté)
+            # Cas image : message multimodal
+            if file_result and file_result["type"] == "image" and file_result.get("b64"):
+                user_message_content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{file_result['mime']};base64,{file_result['b64']}"
+                    }
+                })
+                user_message_content.append({
+                    "type": "text",
+                    "text": prompt
+                })
+            else:
+                # Texte enrichi avec contexte
+                text_content = prompt
+                if full_context:
+                    text_content = f"{full_context}\n---\nQuestion : {prompt}"
+                user_message_content = text_content
+
+            history = get_trimmed_history(st.session_state.messages[:-1])
             messages_to_send = [{"role": "system", "content": SYSTEM_MAIN}]
             messages_to_send += history
-            messages_to_send.append({"role": "user", "content": user_message})
+            messages_to_send.append({"role": "user", "content": user_message_content})
 
             completion = client.chat.completions.create(
                 model=model_choice,
@@ -319,7 +429,6 @@ if prompt := st.chat_input("Posez une question ou collez un lien YouTube..."):
 
             response_placeholder.markdown(full_response)
 
-            # Afficher les sources
             if session_sources:
                 with st.expander("📎 Sources utilisées"):
                     for s in session_sources:
@@ -328,7 +437,6 @@ if prompt := st.chat_input("Posez une question ou collez un lien YouTube..."):
                             <a href="{s.get('url', '#')}" target="_blank">{s.get('url', '')}</a>
                         </div>""", unsafe_allow_html=True)
 
-            # Sauvegarder
             st.session_state.messages.append({"role": "assistant", "content": full_response})
             st.session_state.sources.append(session_sources)
 
