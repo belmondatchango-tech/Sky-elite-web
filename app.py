@@ -17,49 +17,447 @@ logger = logging.getLogger("SKY_ELITE")
 # --- CONFIGURATION ---
 st.set_page_config(
     page_title="SKY ELITE v6.0",
-    page_icon="✝️",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- STYLE ---
+# ── DARK PREMIUM NOIR / OR — REDESIGN COMPLET ──
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    .main-title {
-        font-family: 'Space Mono', monospace;
-        font-size: 2rem; font-weight: 700; letter-spacing: -1px;
-        background: linear-gradient(135deg, #00d4ff, #7b2fff);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .source-card {
-        background: #1a1a2e; border-left: 3px solid #00d4ff;
-        padding: 10px 14px; border-radius: 6px; margin: 6px 0; font-size: 0.85rem;
-    }
-    .stChatMessage { border-radius: 12px; }
-    .mic-container {
-        display: flex; align-items: center; gap: 14px;
-        background: #0f0f1a; border: 1px solid #2a2a4a;
-        border-radius: 14px; padding: 10px 16px; margin: 8px 0;
-    }
-    #micBtn {
-        background: linear-gradient(135deg, #00d4ff, #7b2fff);
-        color: white; border: none; border-radius: 50%;
-        width: 52px; height: 52px; font-size: 1.4rem;
-        cursor: pointer; box-shadow: 0 4px 15px rgba(0,212,255,0.35);
-        transition: all 0.3s; flex-shrink: 0;
-    }
-    #micBtn:hover { transform: scale(1.1); }
-    #micBtn.recording {
-        background: linear-gradient(135deg, #ff4444, #ff0080);
-        animation: pulse 1s infinite;
-    }
-    @keyframes pulse {
-        0%,100% { box-shadow: 0 0 0 0 rgba(255,68,68,0.5); }
-        50% { box-shadow: 0 0 0 14px rgba(255,68,68,0); }
-    }
-    #micStatus { color: #aaa; font-size: 0.9rem; }
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ════════════════════════════════
+   BASE & FOND
+════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+    background: #080E17 !important;
+    color: #DDD5C5 !important;
+}
+
+.stApp {
+    background: radial-gradient(ellipse at top left, #0f1e30 0%, #080E17 55%, #050A10 100%) !important;
+    min-height: 100vh;
+}
+
+/* ════════════════════════════════
+   SIDEBAR
+════════════════════════════════ */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #060D16 0%, #0A1520 100%) !important;
+    border-right: 1px solid rgba(240,165,0,0.18) !important;
+    box-shadow: 4px 0 30px rgba(0,0,0,0.5) !important;
+}
+
+section[data-testid="stSidebar"] .stMarkdown p,
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] .stCaption {
+    color: #9AABBF !important;
+    font-size: 0.82rem;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    color: #F0A500 !important;
+    font-family: 'Cinzel', serif !important;
+    letter-spacing: 1px;
+    font-size: 0.9rem !important;
+    text-transform: uppercase;
+}
+
+/* Sidebar logo mini */
+.sidebar-brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 4px 14px;
+    border-bottom: 1px solid rgba(240,165,0,0.15);
+    margin-bottom: 12px;
+}
+.sidebar-brand-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, #F0A500, #8B5E00);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 3px 12px rgba(240,165,0,0.3);
+    flex-shrink: 0;
+}
+.sidebar-brand-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem; font-weight: 700;
+    background: linear-gradient(135deg, #F0A500, #FFD166);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+}
+
+/* ════════════════════════════════
+   HEADER PRINCIPAL
+════════════════════════════════ */
+.sky-header {
+    background: linear-gradient(135deg, #0D1E30 0%, #111D2C 50%, #0A1520 100%);
+    border: 1px solid rgba(240,165,0,0.22);
+    border-radius: 20px;
+    padding: 22px 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow:
+        0 1px 0 rgba(240,165,0,0.15) inset,
+        0 8px 40px rgba(0,0,0,0.5),
+        0 0 60px rgba(240,165,0,0.04);
+    position: relative;
+    overflow: hidden;
+}
+.sky-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(240,165,0,0.5), transparent);
+}
+
+.sky-logo {
+    width: 58px; height: 58px;
+    background: linear-gradient(145deg, #F0A500 0%, #C47F00 60%, #8B5E00 100%);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.7rem;
+    box-shadow:
+        0 6px 20px rgba(240,165,0,0.4),
+        0 0 0 1px rgba(240,165,0,0.2);
+    flex-shrink: 0;
+    position: relative;
+}
+.sky-logo::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.15), transparent);
+}
+
+.sky-text { flex: 1; }
+.sky-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.65rem; font-weight: 700;
+    background: linear-gradient(135deg, #F0A500 0%, #FFD166 40%, #F0A500 70%, #C47F00 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    line-height: 1;
+    text-shadow: none;
+}
+.sky-subtitle {
+    font-size: 0.72rem; color: #6A7D8F;
+    letter-spacing: 1px; margin-top: 5px;
+    text-transform: uppercase; font-weight: 500;
+}
+.sky-badges {
+    display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px;
+}
+.badge {
+    background: rgba(240,165,0,0.08);
+    border: 1px solid rgba(240,165,0,0.25);
+    color: #C89030; font-size: 0.6rem;
+    padding: 2px 9px; border-radius: 20px; font-weight: 600;
+    letter-spacing: 0.8px; text-transform: uppercase;
+}
+
+.sky-status-dot {
+    width: 10px; height: 10px;
+    background: #22C55E;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #22C55E;
+    animation: blink 2.5s infinite;
+    flex-shrink: 0;
+}
+@keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ════════════════════════════════
+   MESSAGES CHAT
+════════════════════════════════ */
+[data-testid="stChatMessage"] {
+    border-radius: 16px !important;
+    margin: 6px 0 !important;
+    padding: 14px 16px !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Message utilisateur */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
+    background: linear-gradient(135deg, rgba(240,165,0,0.07), rgba(240,165,0,0.03)) !important;
+    border: 1px solid rgba(240,165,0,0.18) !important;
+    box-shadow: 0 2px 12px rgba(240,165,0,0.06) !important;
+}
+
+/* Message assistant */
+[data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) {
+    background: linear-gradient(135deg, rgba(16,30,48,0.9), rgba(10,22,36,0.7)) !important;
+    border: 1px solid rgba(240,165,0,0.07) !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3) !important;
+}
+
+/* Avatar user */
+[data-testid="chatAvatarIcon-user"] {
+    background: linear-gradient(135deg, #F0A500, #C47F00) !important;
+    border-radius: 12px !important;
+}
+
+/* Avatar assistant */
+[data-testid="chatAvatarIcon-assistant"] {
+    background: linear-gradient(135deg, #0D1E30, #162840) !important;
+    border: 1px solid rgba(240,165,0,0.3) !important;
+    border-radius: 12px !important;
+}
+
+/* ════════════════════════════════
+   INPUTS & CHAT INPUT
+════════════════════════════════ */
+.stTextInput > div > div > input {
+    background: rgba(12,22,36,0.9) !important;
+    border: 1px solid rgba(240,165,0,0.25) !important;
+    color: #DDD5C5 !important;
+    border-radius: 12px !important;
+    padding: 11px 16px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s !important;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #F0A500 !important;
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.1) !important;
+    outline: none !important;
+}
+.stTextInput > div > div > input::placeholder { color: #3D5060 !important; }
+
+[data-testid="stChatInput"] {
+    background: rgba(10,18,30,0.95) !important;
+    border-top: 1px solid rgba(240,165,0,0.12) !important;
+}
+[data-testid="stChatInput"] textarea {
+    background: rgba(12,22,36,0.9) !important;
+    border: 1px solid rgba(240,165,0,0.2) !important;
+    color: #DDD5C5 !important;
+    border-radius: 14px !important;
+    font-size: 0.9rem !important;
+}
+[data-testid="stChatInput"] textarea:focus {
+    border-color: rgba(240,165,0,0.6) !important;
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.08) !important;
+}
+
+/* ════════════════════════════════
+   SELECTBOX
+════════════════════════════════ */
+.stSelectbox > div > div {
+    background: rgba(12,22,36,0.9) !important;
+    border: 1px solid rgba(240,165,0,0.2) !important;
+    color: #DDD5C5 !important;
+    border-radius: 10px !important;
+}
+.stSelectbox > div > div:hover {
+    border-color: rgba(240,165,0,0.5) !important;
+}
+
+/* ════════════════════════════════
+   BOUTONS
+════════════════════════════════ */
+.stButton > button {
+    background: linear-gradient(135deg, #F0A500 0%, #C47F00 100%) !important;
+    color: #080E17 !important;
+    border: none !important;
+    border-radius: 11px !important;
+    font-weight: 700 !important;
+    font-size: 0.82rem !important;
+    letter-spacing: 0.5px !important;
+    padding: 9px 16px !important;
+    transition: all 0.25s !important;
+    box-shadow: 0 3px 14px rgba(240,165,0,0.3) !important;
+    text-transform: uppercase;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(240,165,0,0.45) !important;
+    background: linear-gradient(135deg, #FFB820 0%, #D68F00 100%) !important;
+}
+.stButton > button:active {
+    transform: translateY(0) !important;
+}
+
+.stDownloadButton > button {
+    background: rgba(240,165,0,0.06) !important;
+    color: #F0A500 !important;
+    border: 1px solid rgba(240,165,0,0.35) !important;
+    border-radius: 11px !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    transition: all 0.2s !important;
+}
+.stDownloadButton > button:hover {
+    background: rgba(240,165,0,0.14) !important;
+    border-color: #F0A500 !important;
+}
+
+/* ════════════════════════════════
+   TOGGLE
+════════════════════════════════ */
+.stToggle > label { color: #9AABBF !important; font-size: 0.85rem !important; }
+
+/* ════════════════════════════════
+   CARDS & SOURCE
+════════════════════════════════ */
+.source-card {
+    background: linear-gradient(135deg, rgba(13,28,46,0.9), rgba(8,18,30,0.8));
+    border-left: 3px solid #F0A500;
+    border-radius: 0 10px 10px 0;
+    padding: 10px 16px;
+    margin: 6px 0;
+    font-size: 0.81rem;
+    color: #9AABBF;
+    transition: all 0.2s;
+}
+.source-card:hover {
+    border-left-color: #FFD166;
+    background: rgba(240,165,0,0.05);
+}
+.source-card strong { color: #C8A84B; display: block; margin-bottom: 3px; }
+.source-card a { color: #6A9BBF !important; text-decoration: none; font-size: 0.76rem; }
+.source-card a:hover { color: #F0A500 !important; }
+
+/* ════════════════════════════════
+   EXPANDER
+════════════════════════════════ */
+details {
+    background: rgba(10,20,34,0.6) !important;
+    border: 1px solid rgba(240,165,0,0.12) !important;
+    border-radius: 12px !important;
+    margin: 8px 0 !important;
+    overflow: hidden;
+}
+details summary {
+    color: #C8A84B !important;
+    font-weight: 600 !important;
+    font-size: 0.83rem !important;
+    padding: 10px 14px !important;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+}
+details summary:hover { color: #F0A500 !important; }
+
+/* ════════════════════════════════
+   METRICS
+════════════════════════════════ */
+[data-testid="stMetric"] {
+    background: rgba(12,22,36,0.6) !important;
+    border: 1px solid rgba(240,165,0,0.1) !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+}
+[data-testid="stMetricValue"] {
+    color: #F0A500 !important;
+    font-weight: 700 !important;
+    font-size: 1.4rem !important;
+}
+[data-testid="stMetricLabel"] { color: #6A7D8F !important; font-size: 0.75rem !important; }
+
+/* ════════════════════════════════
+   STATUS BOX
+════════════════════════════════ */
+[data-testid="stStatus"] {
+    background: rgba(10,18,30,0.95) !important;
+    border: 1px solid rgba(240,165,0,0.2) !important;
+    border-radius: 14px !important;
+    color: #C8A84B !important;
+}
+[data-testid="stStatus"] p { color: #9AABBF !important; font-size: 0.84rem !important; }
+
+/* ════════════════════════════════
+   FILE UPLOADER
+════════════════════════════════ */
+[data-testid="stFileUploader"] {
+    background: rgba(10,18,30,0.6) !important;
+    border: 2px dashed rgba(240,165,0,0.25) !important;
+    border-radius: 14px !important;
+    transition: all 0.2s !important;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color: rgba(240,165,0,0.5) !important;
+    background: rgba(240,165,0,0.03) !important;
+}
+
+/* ════════════════════════════════
+   ALERT / SUCCESS
+════════════════════════════════ */
+[data-testid="stAlert"] {
+    border-radius: 12px !important;
+    border-left-width: 4px !important;
+}
+
+/* ════════════════════════════════
+   DIVIDER
+════════════════════════════════ */
+hr {
+    border: none !important;
+    border-top: 1px solid rgba(240,165,0,0.12) !important;
+    margin: 14px 0 !important;
+}
+
+/* ════════════════════════════════
+   SCROLLBAR
+════════════════════════════════ */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #080E17; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #F0A500, #8B5E00);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: #F0A500; }
+
+/* ════════════════════════════════
+   MIC BUTTON (dans iframe)
+════════════════════════════════ */
+#micBtn {
+    background: linear-gradient(145deg, #F0A500, #C47F00) !important;
+    color: #080E17 !important;
+    border: none;
+    border-radius: 50%;
+    width: 54px; height: 54px;
+    font-size: 1.35rem;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(240,165,0,0.45), 0 0 0 1px rgba(240,165,0,0.2);
+    transition: all 0.3s;
+    flex-shrink: 0;
+    font-weight: bold;
+}
+#micBtn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 8px 28px rgba(240,165,0,0.6);
+}
+#micBtn.rec {
+    background: linear-gradient(145deg, #FF3333, #CC0000) !important;
+    color: white !important;
+    animation: pulse-red 1s infinite;
+}
+@keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,51,51,0.6); }
+    50% { box-shadow: 0 0 0 16px rgba(255,51,51,0); }
+}
+#micStatus { color: #6A7D8F; font-size: 0.82rem; font-style: italic; }
+
+/* ════════════════════════════════
+   MISC
+════════════════════════════════ */
+.stCaption { color: #3D5060 !important; }
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3 { color: #C8A84B !important; }
+code { background: rgba(240,165,0,0.08) !important; color: #F0A500 !important; border-radius: 4px !important; }
+pre { background: rgba(8,14,23,0.9) !important; border: 1px solid rgba(240,165,0,0.15) !important; border-radius: 10px !important; }
+
+/* Hide Streamlit default header/footer */
+header[data-testid="stHeader"] { background: transparent !important; }
+#MainMenu, footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -88,14 +486,32 @@ client = get_client()
 # OUTILS
 # ============================================================
 
-def chercher_web(query: str, max_results: int = 5) -> dict:
+def chercher_web(query: str, max_results: int = 20) -> dict:
     try:
+        all_results = []
+        seen_urls = set()
+        # Recherche principale
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
-        if not results:
+            for r in results:
+                url = r.get("href", "")
+                if url not in seen_urls:
+                    seen_urls.add(url)
+                    all_results.append(r)
+        # Recherche complémentaire avec variante de la requête
+        if len(all_results) < 10:
+            with DDGS() as ddgs:
+                alt_query = query + " explication détaillée"
+                results2 = list(ddgs.text(alt_query, max_results=10))
+                for r in results2:
+                    url = r.get("href", "")
+                    if url not in seen_urls:
+                        seen_urls.add(url)
+                        all_results.append(r)
+        if not all_results:
             return {"success": False, "data": "Aucun résultat.", "sources": []}
-        sources = [{"title": r["title"], "url": r.get("href", ""), "snippet": r["body"]} for r in results]
-        text = "\n\n".join([f"[{r['title']}]\n{r['body']}" for r in results])
+        sources = [{"title": r["title"], "url": r.get("href", ""), "snippet": r["body"]} for r in all_results]
+        text = "\n\n".join([f"[{r['title']}]\n{r['body']}" for r in all_results])
         return {"success": True, "data": text, "sources": sources}
     except Exception as e:
         return {"success": False, "data": f"Erreur: {e}", "sources": []}
@@ -112,7 +528,7 @@ def lire_youtube(url: str) -> dict:
         return {"success": False, "data": "URL YouTube invalide."}
     try:
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["fr", "en"])
-        text = " ".join([t["text"] for t in transcript])[:10000]
+        text = " ".join([t["text"] for t in transcript])[:30000]
         return {"success": True, "data": text, "video_id": video_id}
     except Exception as e:
         return {"success": False, "data": f"Transcription indisponible: {e}"}
@@ -124,14 +540,14 @@ def lire_fichier(uploaded_file) -> dict:
     raw_bytes = uploaded_file.read()
 
     if ext in ["txt", "md", "json", "py", "html", "xml"]:
-        text = raw_bytes.decode("utf-8", errors="ignore")[:15000]
+        text = raw_bytes.decode("utf-8", errors="ignore")[:50000]
         return {"success": True, "data": text, "type": "text", "b64": None, "name": name}
 
     elif ext == "csv":
         try:
             import pandas as pd
             df = pd.read_csv(io.BytesIO(raw_bytes))
-            preview = df.to_string(max_rows=100)
+            preview = df.to_string(max_rows=500)
             return {"success": True, "data": preview, "type": "csv", "b64": None, "name": name, "df": df}
         except Exception as e:
             return {"success": False, "data": f"Erreur CSV: {e}", "type": "csv", "b64": None, "name": name}
@@ -140,7 +556,7 @@ def lire_fichier(uploaded_file) -> dict:
         try:
             import pandas as pd
             df = pd.read_excel(io.BytesIO(raw_bytes))
-            preview = df.to_string(max_rows=100)
+            preview = df.to_string(max_rows=500)
             return {"success": True, "data": preview, "type": "excel", "b64": None, "name": name, "df": df}
         except Exception as e:
             return {"success": False, "data": f"Erreur Excel: {e}", "type": "excel", "b64": None, "name": name}
@@ -149,8 +565,8 @@ def lire_fichier(uploaded_file) -> dict:
         try:
             import pdfplumber
             with pdfplumber.open(io.BytesIO(raw_bytes)) as pdf:
-                pages_text = [p.extract_text() for p in pdf.pages[:20] if p.extract_text()]
-            full_text = "\n\n".join(pages_text)[:15000]
+                pages_text = [p.extract_text() for p in pdf.pages[:100] if p.extract_text()]
+            full_text = "\n\n".join(pages_text)[:50000]
             if not full_text.strip():
                 return {"success": False, "data": "PDF sans texte extractible.", "type": "pdf", "b64": None, "name": name}
             return {"success": True, "data": full_text, "type": "pdf", "b64": None, "name": name}
@@ -179,7 +595,7 @@ def tts_gtts(text: str, lang: str = "fr") -> bytes:
     try:
         from gtts import gTTS
         clean = re.sub(r"[*_`#>\[\]|\\]", "", text)
-        clean = re.sub(r"\n+", ". ", clean).strip()[:1200]
+        clean = re.sub(r"\n+", ". ", clean).strip()[:3000]
         tts = gTTS(text=clean, lang=lang, slow=False)
         buf = io.BytesIO()
         tts.write_to_fp(buf)
@@ -238,7 +654,8 @@ SYSTEM_ROUTER = """Tu es un routeur d'outils. Réponds UNIQUEMENT en JSON valide
 
 {
   "tools": [],
-  "web_query": "requête si web_search",
+  "web_query": "requête principale si web_search",
+  "web_queries": ["requête1", "requête2", "requête3"],
   "youtube_url": "URL si youtube",
   "image_prompt": "description en anglais si generate_image",
   "reasoning": "explication courte"
@@ -246,6 +663,8 @@ SYSTEM_ROUTER = """Tu es un routeur d'outils. Réponds UNIQUEMENT en JSON valide
 
 Outils disponibles:
 - "web_search" : questions factuelles, actualités, informations récentes
+  → Si le sujet est complexe ou large, fournis PLUSIEURS requêtes dans web_queries (max 4)
+  → Sinon, une seule requête dans web_query suffit
 - "youtube" : si URL YouTube présente dans le message
 - "generate_image" : si l'utilisateur demande de créer/générer/dessiner/illustrer une image
 - [] : conversation simple, calcul, rédaction, fichier fourni
@@ -280,7 +699,7 @@ def decider_outils(prompt: str, has_file: bool = False) -> dict:
 # MÉMOIRE
 # ============================================================
 
-MAX_HISTORY_TURNS = 10
+MAX_HISTORY_TURNS = 50
 
 def get_trimmed_history(messages: list) -> list:
     if len(messages) > MAX_HISTORY_TURNS * 2:
@@ -314,13 +733,43 @@ Règles :
 # INTERFACE
 # ============================================================
 
-st.markdown('<div class="main-title">🛡️ SKY ELITE v6.0</div>', unsafe_allow_html=True)
-st.caption("Agent IA · Web · YouTube · Fichiers · Images · Voix · Export")
+# ════════════════════════════════
+# HEADER PREMIUM
+# ════════════════════════════════
+st.markdown("""
+<div class="sky-header">
+    <div class="sky-logo">🛡️</div>
+    <div class="sky-text">
+        <div class="sky-title">SKY&nbsp;&nbsp;ELITE</div>
+        <div class="sky-subtitle">Agent IA Autonome &nbsp;·&nbsp; v6.0 &nbsp;·&nbsp; Propulsé par OpenRouter</div>
+        <div class="sky-badges">
+            <span class="badge">🌐 Web</span>
+            <span class="badge">📺 YouTube</span>
+            <span class="badge">📁 Fichiers</span>
+            <span class="badge">🖼️ Images IA</span>
+            <span class="badge">🎤 Voix</span>
+            <span class="badge">📊 Graphiques</span>
+            <span class="badge">📥 Export</span>
+        </div>
+    </div>
+    <div class="sky-status-dot" title="En ligne"></div>
+</div>
+""", unsafe_allow_html=True)
 
-# --- SIDEBAR ---
+# ════════════════════════════════
+# SIDEBAR PREMIUM
+# ════════════════════════════════
 with st.sidebar:
-    st.header("⚙️ Paramètres")
-    model_choice = st.selectbox("Modèle LLM", MODELS, index=0)
+    # Mini brand
+    st.markdown("""
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">🛡️</div>
+        <div class="sidebar-brand-name">SKY ELITE</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.subheader("🤖 Modèle IA")
+    model_choice = st.selectbox("", MODELS, index=0, label_visibility="collapsed")
 
     st.divider()
     st.subheader("🔊 Voix")
@@ -330,17 +779,23 @@ with st.sidebar:
     st.divider()
     st.subheader("📁 Fichier")
     uploaded_file = st.file_uploader(
-        "PDF, TXT, CSV, Excel, Image...",
+        "Déposez un fichier ici",
         type=["pdf", "txt", "md", "csv", "xlsx", "xls", "json", "py", "html", "xml", "png", "jpg", "jpeg", "webp"],
+        label_visibility="collapsed"
     )
     if uploaded_file:
-        st.success(f"✅ {uploaded_file.name}")
+        st.success(f"✅ **{uploaded_file.name}**")
 
     st.divider()
     st.subheader("📊 Session")
     msg_count = len(st.session_state.get("messages", []))
-    st.metric("Messages", msg_count)
+    col_m1, col_m2 = st.columns(2)
+    with col_m1:
+        st.metric("Messages", msg_count)
+    with col_m2:
+        st.metric("Tours max", MAX_HISTORY_TURNS)
 
+    st.markdown("<br>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🧹 Vider", use_container_width=True):
@@ -358,7 +813,7 @@ with st.sidebar:
             )
 
     st.divider()
-    st.caption("SKY ELITE v6.0 · OpenRouter · Pollinations · gTTS")
+    st.caption("SKY ELITE v6.0 · OpenRouter · Pollinations.ai · gTTS")
 
 
 # --- INIT SESSION ---
@@ -388,25 +843,35 @@ for i, m in enumerate(st.session_state.messages):
 # ============================================================
 
 VOICE_HTML = """
-<div class="mic-container" style="display:flex;align-items:center;gap:14px;background:#0f0f1a;
-     border:1px solid #2a2a4a;border-radius:14px;padding:10px 16px;margin:8px 0;">
+<div style="display:flex;align-items:center;gap:14px;
+     background:rgba(22,40,64,0.85);
+     border:1px solid rgba(240,165,0,0.25);
+     border-radius:14px;padding:12px 18px;margin:4px 0;">
   <button id="micBtn" onclick="toggleMic()" title="Parler à SKY"
-    style="background:linear-gradient(135deg,#00d4ff,#7b2fff);color:white;border:none;
-    border-radius:50%;width:52px;height:52px;font-size:1.4rem;cursor:pointer;
-    box-shadow:0 4px 15px rgba(0,212,255,0.35);transition:all 0.3s;flex-shrink:0;">🎤</button>
-  <div id="micStatus" style="color:#aaa;font-size:0.9rem;">
-    Appuyez sur 🎤 et parlez — Chrome requis
+    style="background:linear-gradient(135deg,#F0A500,#C47F00);color:#0D1B2A;border:none;
+    border-radius:50%;width:52px;height:52px;font-size:1.3rem;cursor:pointer;font-weight:bold;
+    box-shadow:0 4px 15px rgba(240,165,0,0.4);transition:all 0.3s;flex-shrink:0;">🎤</button>
+  <div>
+    <div style="color:#C0A060;font-size:0.75rem;font-weight:700;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase;">Entrée vocale</div>
+    <div id="micStatus" style="color:#8899AA;font-size:0.82rem;font-style:italic;">
+      Appuyez sur 🎤 et parlez — Google Chrome requis
+    </div>
   </div>
 </div>
 
 <style>
-  @keyframes pulse {
+  @keyframes pulse-gold {
+    0%,100%{box-shadow:0 0 0 0 rgba(240,165,0,0.5);}
+    50%{box-shadow:0 0 0 14px rgba(240,165,0,0);}
+  }
+  @keyframes pulse-red {
     0%,100%{box-shadow:0 0 0 0 rgba(255,68,68,0.5);}
     50%{box-shadow:0 0 0 14px rgba(255,68,68,0);}
   }
   #micBtn.rec {
-    background:linear-gradient(135deg,#ff4444,#ff0080) !important;
-    animation:pulse 1s infinite;
+    background:linear-gradient(135deg,#ff4444,#cc0000) !important;
+    color:white !important;
+    animation:pulse-red 1s infinite;
   }
 </style>
 
@@ -558,15 +1023,26 @@ if prompt:
 
             # WEB
             if "web_search" in tools_used:
-                query = decision.get("web_query") or prompt
-                status.write(f"🔍 Recherche : *{query}*")
-                result = chercher_web(query)
-                if result["success"]:
-                    full_context += f"=== WEB ===\n{result['data']}\n\n"
-                    session_sources = result.get("sources", [])
-                    status.write(f"✅ {len(session_sources)} sources.")
-                else:
-                    status.write(f"⚠️ {result['data']}")
+                web_queries = decision.get("web_queries") or []
+                main_query = decision.get("web_query") or prompt
+                if not web_queries:
+                    web_queries = [main_query]
+                all_web_text = ""
+                all_sources = []
+                seen = set()
+                for q in web_queries:
+                    status.write(f"🔍 Recherche : *{q}*")
+                    result = chercher_web(q)
+                    if result["success"]:
+                        all_web_text += result["data"] + "\n\n"
+                        for s in result.get("sources", []):
+                            if s["url"] not in seen:
+                                seen.add(s["url"])
+                                all_sources.append(s)
+                if all_web_text:
+                    full_context += f"=== WEB ===\n{all_web_text}\n\n"
+                    session_sources = all_sources
+                    status.write(f"✅ {len(all_sources)} sources au total.")
 
             # IMAGE
             if "generate_image" in tools_used:
@@ -599,7 +1075,7 @@ if prompt:
                 model=model_choice,
                 messages=messages_to_send,
                 stream=True,
-                max_tokens=1500
+                max_tokens=4096
             )
 
             for chunk in completion:
