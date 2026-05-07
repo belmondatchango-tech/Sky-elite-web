@@ -490,17 +490,18 @@ def chercher_web(query: str, max_results: int = 20) -> dict:
     try:
         all_results = []
         seen_urls = set()
-        # Recherche principale
+
         with DDGS() as ddgs:
+            # Recherche principale
             results = list(ddgs.text(query, max_results=max_results))
             for r in results:
                 url = r.get("href", "")
                 if url not in seen_urls:
                     seen_urls.add(url)
                     all_results.append(r)
-        # Recherche complémentaire avec variante de la requête
-        if len(all_results) < 10:
-            with DDGS() as ddgs:
+
+            # Recherche complémentaire si peu de résultats
+            if len(all_results) < 10:
                 alt_query = query + " explication détaillée"
                 results2 = list(ddgs.text(alt_query, max_results=10))
                 for r in results2:
@@ -508,12 +509,15 @@ def chercher_web(query: str, max_results: int = 20) -> dict:
                     if url not in seen_urls:
                         seen_urls.add(url)
                         all_results.append(r)
+
         if not all_results:
             return {"success": False, "data": "Aucun résultat.", "sources": []}
+
         sources = [{"title": r["title"], "url": r.get("href", ""), "snippet": r["body"]} for r in all_results]
         text = "\n\n".join([f"[{r['title']}]\n{r['body']}" for r in all_results])
         return {"success": True, "data": text, "sources": sources}
     except Exception as e:
+        logger.error(f"Erreur recherche web: {e}")
         return {"success": False, "data": f"Erreur: {e}", "sources": []}
 
 
